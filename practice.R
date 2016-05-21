@@ -9,7 +9,7 @@ library(DiagrammeR)
 
 options(tibble.width = Inf)
 
-
+### http://dmlc.ml/rstats/2016/03/10/xgboost.html
 data(agaricus.train, package='xgboost')
 data(agaricus.test, package='xgboost')
 train <- agaricus.train
@@ -25,13 +25,21 @@ bst <- xgboost(data = train$data, label = train$label, max.depth = 2,
                eta = 1, nthread = 2, nround = 3, objective = "binary:logistic")
 xgb.plot.tree(feature_names = agaricus.train$data@Dimnames[[2]], model = bst)
 
-bst <- xgboost(data = train$data, label = train$label, max.depth = 15,
-               eta = 1, nthread = 2, nround = 30, objective = "binary:logistic",
-               min_child_weight = 50)
+# use this
+bst <- xgb.cv(data = train$data, label = train$label, max.depth = 5,
+               eta = 0.5, nthread = 2, nround = 30, objective = "binary:logistic",
+               min_child_weight = 50, nfold = 5, early.stop.round = 3, maximize = FALSE)
+, eval_metric = "auc")
+
+model <- xgb.dump(bst, with.stats = T)
+
+
 xgb.plot.multi.trees(model = bst, feature_names = agaricus.train$data@Dimnames[[2]], features.keep = 3)
 
+xgb.pred <- predict(bst, data.matrix(test$data))
+
 importance_matrix <- xgb.importance(agaricus.train$data@Dimnames[[2]], model = bst)
-xgb.plot.importance(importance_matrix)
+xgb.plot.importance(importance_matrix[1:5])
 
 
 ### http://xgboost.readthedocs.io/en/latest/R-package/discoverYourData.html
@@ -71,3 +79,11 @@ print(c2)
 
 c2 <- chisq.test(df$AgeDiscret, output_vector)
 print(c2)
+
+
+# https://github.com/dmlc/xgboost/tree/master/demo
+
+# http://www.analyticsvidhya.com/blog/2016/01/xgboost-algorithm-easy-steps/
+
+library(nycflights13)
+
